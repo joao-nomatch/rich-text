@@ -28,6 +28,10 @@ Para utilizar o compoente de editor de texto em outro projeto React, siga os pas
     -  `uuid`
     -  `@types/uuid`
     -  `tailwind`
+    -  `react-hook-form`
+    -  `@hookform/resolvers`
+    -  `zod`
+    -  `chadcn/ui` (toast)
 
 7. Por fim, defina as variáveis `projectUrl` e `bucketName` com seus respectivos valores. 
 
