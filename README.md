@@ -10,14 +10,14 @@ Para utilizar o compoente de editor de texto em outro projeto React, siga os pas
 
 2. Vá até as configurações do projeto, copie a url do projeto e a chave da API (Anon Key) e coloque no arquivo `.env` como `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_ANON_KEY` respectivamente.
 
-3. Crie uma nova tabela com nome 'Posts' com as seguintes colunas e tipagem (o RLS deve estar desabilitado para deixar a tabela pública):
+3. Crie uma nova tabela com as seguintes colunas e tipagem (o RLS deve estar desabilitado para deixar a tabela pública):
     - id (valor padrão)
     - created_at (valor padrão)
     - text (text)
     - img_url (text)
     - author (text)
 
-4. Crie um bucket público com nome 'posts-images' 
+4. Crie um bucket público e adicione uma nova política a ele, permitindo select, insert, update e delete.
 
 5. Copie o arquivo do componente `rich-text.tsx`
 
@@ -33,7 +33,7 @@ Para utilizar o compoente de editor de texto em outro projeto React, siga os pas
     -  `zod`
     -  `chadcn/ui` (toast)
 
-7. Por fim, defina as variáveis `projectUrl` e `bucketName` com seus respectivos valores. 
+7. Por fim, defina as variáveis `bucketName`, `tableName` e `projectId` com seu respectivo valores. 
 
 ```
 Disclaimer: Deve ter uma maneira melhor de usar os valores do último tópico para definir a url da requisição, mas por enquanto foi a forma que encontrei.

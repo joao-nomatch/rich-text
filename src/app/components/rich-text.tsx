@@ -9,35 +9,53 @@ import { useForm, SubmitHandler } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/app/components/ui/use-toast"
 
-const baseUrl = "https://cmwixhsplibbualtcozz.supabase.co/storage/v1/object/public/test/"
+const bucketName = 'posts-images'
+const tableName = 'Posts'
+const projectId = 'cmwixhsplibbualtcozz'
+const baseUrl = `https://${projectId}.supabase.co/storage/v1/object/public/${bucketName}/`
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_ANON_KEY!,
 )
 
-const MAX_FILE_SIZE = 500000;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; ///5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+const formSchema = z.object({
+  author: z.string().min(1, {message: 'Esse campo precisa ser preenchido.'}),
+  text: z.string().min(1, {message: 'Esse campo precisa ser preenchido.'}),
+  img_file: z
+  .any()
+  .refine((file) => file?.length > 0, "Escolha uma imagem.")
+  .superRefine((file, ctx) => {
+    if (file?.[0]) {
+      console.log(file?.[0].size)
+      if (file?.[0].size > MAX_FILE_SIZE) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "A imagem deve ter até 5MB.",
+        })
+      }
+      if (!(ACCEPTED_IMAGE_TYPES.includes(file?.[0].type))) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Formato inválido, selecione arquivos .jpg, .jpeg, .png ou .webp .",
+        })
+
+      }
+    }
+    return true;
+  }
+  ),
+})
+
+type FormSchema = z.infer<typeof formSchema>;
 
 export function RichText() {
 
   const [userId, setUserId] = useState('');
   const { toast } = useToast()
-
-  const formSchema = z.object({
-    author: z.string().min(1, {message: 'Esse campo precisa ser preenchido.'}),
-    text: z.string().min(1, {message: 'Esse campo precisa ser preenchido.'}),
-    img_file: z
-    .any()
-    .refine((file) => file?.length > 0, "Escolha uma imagem.")
-    .refine((file) => file?.[0].size <= MAX_FILE_SIZE, `A imagem deve ter até 5MB.`)
-    .refine(
-      (file) => ACCEPTED_IMAGE_TYPES.includes(file?.[0].type),
-      "Formato inválido de arquivo, selecione arquivos .jpg, .jpeg, .png ou .webp ."
-    )
-  })
-
-  type FormSchema = z.infer<typeof formSchema>;
-
 
   const {register,handleSubmit, formState: {errors, isSubmitting}} = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
@@ -49,7 +67,6 @@ export function RichText() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user !== null) {
         setUserId(user.id);
-        console.log('userId:' + user.id)
       } else {
         setUserId('');
       }
@@ -57,7 +74,7 @@ export function RichText() {
     }
   }
 
-  const signout = async () => {
+  const signOut = async () => {
     setUserId('');
     await supabase.auth.signOut();
   }
@@ -71,12 +88,12 @@ export function RichText() {
   
       await supabase
         .storage
-        .from('posts-images')
+        .from(bucketName)
         .upload(userId + "/" + mediaId, img_file[0])
 
       await supabase
-      .from('Posts')
-      .insert([{text:text, img_url: img_url, author: author}])
+      .from(tableName)
+      .insert([{text:text, author: author, img_url: img_url}])
 
       toast({
         title:'Sucesso!',
@@ -114,11 +131,11 @@ export function RichText() {
             {errors.author && <span className='text-red-500'>{errors.author.message}</span>}
           </div>
           <input type="file" {...register("img_file")}/>
-          {errors.img_file && <span className='text-red-500'>{errors.img_file.message}</span>}
+          {errors.img_file && <span className='text-red-500'>{String(errors.img_file.message)}</span>}
           <button disabled={isSubmitting} type='submit'className='border-neutral-500 border rounded-md p-2 disabled:bg-neutral-200'>
             Enviar
           </button>
-          <button type='button' onClick={signout} className='absolute top-10 right-10 border-neutral-500 border rounded-md p-2 '>
+          <button type='button' onClick={signOut} className='absolute top-10 right-10 border-neutral-500 border rounded-md p-2 '>
             Logout
           </button>
         </form>
